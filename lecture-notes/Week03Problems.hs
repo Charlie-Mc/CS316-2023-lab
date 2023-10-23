@@ -3,7 +3,7 @@ module Week03Problems where
 import Data.Char
 
 {------------------------------------------------------------------------------}
-{- TUTORIAL QUESTIONS                                                         -}
+{- T	UTORIAL QUESTIONS                                                         -}
 {------------------------------------------------------------------------------}
 
 {- 1. Lambda notation.
@@ -13,14 +13,14 @@ import Data.Char
    <something>', and so on. -}
 
 mulBy2 :: Int -> Int
-mulBy2 x = 2*x
+mulBy2 = \x -> 2*x
 
 mul :: Int -> Int -> Int
-mul x y = x * y
+mul = \x -> (\y -> y * x)
+
 
 invert :: Bool -> Bool
-invert True  = False
-invert False = True
+invert = \b  -> if b then False else True
   {- HINT: use a 'case', or an 'if'. -}
 
 
@@ -29,18 +29,19 @@ invert False = True
    The function 'mul' defined above has the type 'Int -> Int ->
    Int'. (a) What is the type of the Haskell expression:
 
-       mul 10
+       mul 10: Int -> Int
 
    (b) what is 'mul 10'? How can you use it to multiply a number? -}
 
-
+		-- it just times a number by 10 
 {- 3. Partial Application
 
    Write the 'mulBy2' function above using 'mul'. Can you make your
    function as short as possible? -}
+   
 
 double_v2 :: Int -> Int
-double_v2 = undefined -- fill this in
+double_v2 = \x -> mul x 2 -- fill this in
 
 {- 4. Using 'map'.
 
@@ -63,7 +64,7 @@ double_v2 = undefined -- fill this in
 -}
 
 shout :: String -> String    -- remember that String = [Char]
-shout = undefined
+shout text = map toUpper text
 
 
 {- 5. Using 'map' with another function.
@@ -87,7 +88,7 @@ shout = undefined
    into two element lists. -}
 
 dupAll :: [a] -> [a]
-dupAll = undefined
+dupAll = concatMap (\d -> [d,d])
 
 
 {- 6. Using 'filter'
@@ -100,14 +101,16 @@ dupAll = undefined
    (c) Write a single function that takes a character 'c' and a string
        's' and counts the number of 'c's in 's'. -}
 
-onlyEs :: String -> String
-onlyEs = undefined
+onlyEs :: String -> String 
+onlyEs a = filter (=='E') (shout a)
+
 
 numberOfEs :: String -> Int
-numberOfEs = undefined
+numberOfEs a = length(onlyEs a)
 
 numberOf :: Char -> String -> Int
-numberOf = undefined
+numberOf _ [] = 0 
+numberOf c s = length(filter(==c) s)
 
 
 {- 7. Rewriting 'filter'
@@ -120,10 +123,10 @@ numberOf = undefined
 -}
 
 filter_v2 :: (a -> Bool) -> [a] -> [a]
-filter_v2 = undefined
+filter_v2 b = concatMap(\x -> if b x then [x] else []) 
 
-filterMap :: (a -> Maybe b) -> [a] -> [b]
-filterMap = undefined
+--filterMap :: (a -> Maybe b) -> [a] -> [b]
+--filterMap = undefinded
 
 
 {- 8. Composition
@@ -136,7 +139,7 @@ filterMap = undefined
    this week. -}
 
 (>>>) :: (a -> b) -> (b -> c) -> a -> c
-(>>>) = undefined
+(>>>) f b c = b (f c)
 
 {- Try rewriting the 'numberOfEs' function from above using this one. -}
 
@@ -145,9 +148,8 @@ filterMap = undefined
    Write a function of the following type that takes a value 'x' and a
    function 'f' and applies 'f' to 'x'. Note that this functions takes
    its arguments in reverse order to normal function application! -}
-
 (|>) :: a -> (a -> b) -> b
-(|>) x f = undefined
+(|>) x f = f x 
 
 
 {- This function can be used between its arguments like so:
@@ -167,7 +169,7 @@ filterMap = undefined
    arguments in reverse order: -}
 
 flip :: (a -> b -> c) -> b -> a -> c
-flip  = undefined
+flip  f a b = f b a 
 
 {- 11. Evaluating Formulas
 
@@ -180,6 +182,7 @@ data Formula
   | Or   Formula Formula
   | Not  Formula
   deriving Show
+  
 
 {- (a) Write a function that evaluates a 'Formula' to a 'Bool'ean value,
        assuming that all the atomic formulas are given the value
@@ -192,8 +195,10 @@ data Formula
 -}
 
 eval_v1 :: Formula -> Bool
-eval_v1 = undefined
-
+eval_v1 (Atom _) = True
+eval_v1 (And f1 f2) = eval_v1 f1 && eval_v1 f2
+eval_v1 (Or f1 f2) = eval_v1 f1 || eval_v1 f2
+eval_v1 (Not f) = not (eval_v1 f)
 
 
 
@@ -202,8 +207,10 @@ eval_v1 = undefined
        for each atomic proposition: -}
 
 eval :: (String -> Bool) -> Formula -> Bool
-eval = undefined
-
+eval s (Atom f) = if s f then True else False
+eval s (And f1 f2) = (eval s f1) && (eval s f2)
+eval s (Or f1 f2) = (eval s f1) || (eval s f2)
+eval s (Not f) = not (eval s f)
 {- For example:
 
      eval (\s -> s == "A") (Or (Atom "A") (Atom "B"))  == True
@@ -217,7 +224,10 @@ eval = undefined
    formulas in a Formula with whatever 'f' tells it to: -}
 
 subst :: (String -> Formula) -> Formula -> Formula
-subst = undefined
+subst s (Atom f) = s f
+subst s (And f1 f2) = And (subst s f1) (subst s f2)
+subst s (Or f1 f2) =  Or (subst s f1) (subst s f2)
+subst s (Not f) = Not (subst s f)
 
 {- For example:
 
@@ -233,4 +243,22 @@ subst = undefined
    give a 'Bool' for the whole formula. -}
 
 evalMaybe :: (String -> Maybe Bool) -> Formula -> Maybe Bool
-evalMaybe = undefined
+
+evalMaybe _ (Atom f) = Nothing
+evalMaybe _ (And f1 f2) = Nothing
+evalMaybe _ (Or f1 f2) = Nothing
+evalMaybe _ (Not f) = Nothing
+evalMaybe s (Atom f) = s f 
+
+evalMaybe s (And f1 f2) = do
+  result1 <- evalMaybe s f1
+  result2 <- evalMaybe s f2
+  return (result1 && result2)
+evalMaybe s (Or f1 f2) = do
+  result1 <- evalMaybe s f1
+  result2 <- evalMaybe s f2
+  return (result1 || result2)
+evalMaybe s (Not f) = do
+  result <- evalMaybe s f
+  return (not result)
+

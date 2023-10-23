@@ -14,7 +14,9 @@ import Week02
       element in list: -}
 
 popCount :: Eq a => a -> [a] -> Int
-popCount = undefined
+popCount _ [] = 0
+popCount a (x:xs) = if a == x then (popCount a xs) +1 else popCount a xs
+		
 
 {-    (popCount is short for "population count"). Examples:
 
@@ -32,7 +34,10 @@ popCount = undefined
 -}
 
 insertNoDup :: Ord a => a -> [a] -> [a]
-insertNoDup = undefined
+insertNoDup a [] = [a]
+insertNoDup a (x:xs) | a == x = x:xs
+		     | a < x = a:x:xs
+		     | a > x = x:insertNoDup a xs
 
 
 {- 3. Write a version of 'remove' that removes all copies of an element
@@ -43,17 +48,28 @@ insertNoDup = undefined
 -}
 
 removeAll :: Ord a => a -> [a] -> [a]
-removeAll = undefined
+removeAll _ [] = []
+removeAll a (x:xs) = if x == a then removeAll a xs else (x:removeAll a xs)
 
 
 {- 4. Rewrite 'treeFind' and 'treeInsert' to use 'compare' and 'case'
       expressions. -}
 
 treeFind2 :: Ord k => k -> KV k v -> Maybe v
-treeFind2 = undefined
+treeFind2 k Leaf = Nothing
+treefind2 k (Node l (k',v') r) = case compare k k' of 
+	EQ -> Just v'
+	GT -> treeFind k r
+	LT -> treeFind k l
+							
+			
 
 treeInsert2 :: Ord k => k -> v -> KV k v -> KV k v
-treeInsert2 = undefined
+treeInsert2 k v Leaf = Node Leaf (k,v) Leaf
+treeInsert2 k v (Node l (k',v') r) = case compare k k' of 
+	EQ -> Node l (k,v) r
+	LT -> Node (treeInsert k v l) (k',v') r
+	GT -> Node l (k',v') (treeInsert k v r)
 
 
 {- 5. MergeSort is another sorting algorithm that works in the following
@@ -79,7 +95,11 @@ treeInsert2 = undefined
       'where' clause. -}
 
 split :: [a] -> ([a], [a])
-split = undefined
+split [] = ([],[])
+split (x:[]) = ([x], [x])
+split (x1:x2:xs) =(x1:odds,x2:evens) where (odds,evens) = split xs
+       
+	
 
 {-    'merge' merges two sorted lists into one sorted list. Examples:
 
@@ -88,20 +108,42 @@ split = undefined
 -}
 
 merge :: Ord a => [a] -> [a] -> [a]
-merge = undefined
+merge [] [] = []
+merge [] ys = ys
+merge xs [] = xs
+merge (x:xs) (y:ys) = 
+	if x <= y then 
+		x: merge xs (y:ys)
+	else 
+		y: merge (x:xs) ys
+		
 
 {-    'mergeSort' uses 'split' and 'merge' to implement the merge sort
       algorithm described above. -}
 
 mergeSort :: Ord a => [a] -> [a]
-mergeSort = undefined
-
+mergeSort [] = []
+mergeSort [x] = [x]
+mergeSort xs = merge (mergeSort odds) (mergeSort evens) 
+	where (odds, evens) = split xs
+		
 
 {- 6. Write another version of 'makeChange' that returns all the
       possible ways of making change as a list: -}
 
 makeChangeAll :: [Coin] -> [Coin] -> Int -> [[Coin]]
-makeChangeAll = undefined
+makeChangeAll coins used 0 = [used]
+makeChangeAll [] used _ = []
+makeChangeAll (coin:coins) used amount 
+	| amount >= coin = 
+	makeChangeAll coins (coin:used) (amount - coin)
+	++
+	makeChangeAll coins used amount 
+	| otherwise = makeChangeAll coins used amount 
+	
+orElse :: Maybe a -> Maybe a -> Maybe a 
+orElse (Just a) _ = Just a
+orEsle Nothing maybeA = maybeA 
 
 {- HINT: you don't need a case expression, just a way of appending two
    lists of possibilities. -}
@@ -152,8 +194,13 @@ lookupField fieldname record =
 -- If the number of field names in the header does not match the
 -- number of fields in the row, an @Nothing@ should be returned.
 rowToRecord :: [String] -> Row -> Maybe Record
-rowToRecord header row =
-  error "rowToRecord: not implemented"
+rowToRecord [] [] = Just []
+rowToRecord [] row = Nothing 
+rowToRecord (h:header) (f:row) =
+	case rowToRecord header row of 
+	Nothing -> Nothing 
+	Just record -> Just ((h,f): record)
+
 
 -- | Given a header listing field names, and a list of rows, converts
 -- each row into a record. See 'rowToRecord' for how individual rows
